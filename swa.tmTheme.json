@@ -1,0 +1,61 @@
+{
+    "$schema": "vscode://schemas/color-theme",
+    "name": "Custom Language Theme",
+    "colors": {
+        "editor.foreground": "#ABB2BF", // Default text color
+        "editor.background": "#282C34", // Editor background color
+        "keyword.control.custom": "#C678DD", // Keyword color
+        "constant.numeric.custom": "#D19A66", // Numeric constant color
+        "keyword.operator.custom": "#56B6C2", // Operator color
+        "punctuation.definition.custom": "#56B6C2", // Punctuation color
+        "comparison.operator.custom": "#56B6C2", // Comparison operator color
+        "support.function.builtin.custom": "#61AFEF", // Built-in function color
+        "string.quoted.double.custom": "#98C379", // String color
+        // Add more colors for additional syntax elements as needed
+    },
+    "tokenColors": [
+        {
+            "scope": "keyword.control.custom",
+            "settings": {
+                "foreground": "#C678DD" // Keyword color
+            }
+        },
+        {
+            "scope": "constant.numeric.custom",
+            "settings": {
+                "foreground": "#D19A66" // Numeric constant color
+            }
+        },
+        {
+            "scope": "keyword.operator.custom",
+            "settings": {
+                "foreground": "#56B6C2" // Operator color
+            }
+        },
+        {
+            "scope": "punctuation.definition.custom",
+            "settings": {
+                "foreground": "#56B6C2" // Punctuation color
+            }
+        },
+        {
+            "scope": "comparison.operator.custom",
+            "settings": {
+                "foreground": "#56B6C2" // Comparison operator color
+            }
+        },
+        {
+            "scope": "support.function.builtin.custom",
+            "settings": {
+                "foreground": "#61AFEF" // Built-in function color
+            }
+        },
+        {
+            "scope": "string.quoted.double.custom",
+            "settings": {
+                "foreground": "#98C379" // String color
+            }
+        },
+        // Add more token color settings for additional syntax elements as needed
+    ]
+}

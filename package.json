@@ -1,0 +1,30 @@
+{
+  "name": "swahilipro",
+  "displayName": "swahilipro",
+  "description": "SwahiliPro is a language support tool designed to aid in writing and understanding programs written in the Swahili language. Built with the principles of Swahili in mind, this language aims to empower people worldwide to learn and develop software using their native language.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "swa",
+      "aliases": ["Swahili programming language", "swa"],
+      "extensions": [".swa"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "swa",
+      "scopeName": "source.swa",
+      "path": "./syntaxes/swa.tmLanguage.json"
+    }],
+    "themes": [{
+      "label": "SwahiliPro Theme",
+      "uiTheme": "vs-dark",
+      "path": "swa.tmTheme.json"
+    }]
+  }
+}
