@@ -12,6 +12,7 @@
         "support.function.builtin.custom": "#61AFEF", // Built-in function color
         "string.quoted.double.custom": "#98C379", // String color
         // Add more colors for additional syntax elements as needed
+        "comment.line.custom": "#5C6370" // Comment color
     },
     "tokenColors": [
         {
@@ -56,6 +57,12 @@
                 "foreground": "#98C379" // String color
             }
         },
+        {
+            "scope": "comment.line.custom",
+            "settings": {
+                "foreground": "#90EE90" // Comment color
+            }
+        }
         // Add more token color settings for additional syntax elements as needed
     ]
 }

@@ -2,46 +2,57 @@
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Swahili programming language",
 	"patterns": [
-        {
-            "include": "#keywords"
-        },
-        {
-            "include": "#tokens"
-        }
-    ],
-    "repository": {
-        "keywords": {
-            "patterns": [
-                {
-                    "name": "keyword.control.custom",
-                    "match": "\\b(var|na|au|ikiwa|au_ikiwa|ikiwa_nyingine|kwa|hadi|wakati|njia|basi|funga|rudisha|vunja)\\b"
-                }
-            ]
-        },
-        "tokens": {
-            "patterns": [
-                {
-                    "name": "constant.numeric.custom",
-                    "match": "\\b(NAMBARI|KIBONYEZO)\\b"
-                },
-                {
-                    "name": "keyword.operator.custom",
-                    "match": "\\b(ONGEZA|TOA|MARA|GAWA)\\b"
-                },
-                {
-                    "name": "punctuation.definition.custom",
-                    "match": "\\b(MABANO_KUSHOTO|MABANO_KULIA|NUKTA_KUSHOTO|NUKTA_KULIA|KOMA|MSHALE)\\b"
-                },
-                {
-                    "name": "comparison.operator.custom",
-                    "match": "\\b(NI_SAWA|SI_SAWA|NDOGO_ZAIDI|KUBWA_ZAIDI|NDOGO_ZAIDI_AU_SAWA|KUBWA_ZAIDI_AU_SAWA)\\b"
-                },
-                {
-                    "name": "support.function.builtin.custom",
-                    "match": "\\b(andika|andika_mstari_mpya|bonyeza|bonyeza_num|futa|cls|ni_nambari|ni_neno|ni_orodha|ni_njia|unganisha|toa|ongeza|urefu|swa)\\b"
-                }
-            ]
-        }
-    },
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#tokens"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.custom",
+					"match": "#.*$"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.custom",
+					"match": "\\b(var|na|au|ikiwa|au_ikiwa|ikiwa_nyingine|kwa|hadi|wakati|njia|basi|funga|rudisha|vunja)\\b"
+				}
+			]
+		},
+		"tokens": {
+			"patterns": [
+				{
+					"name": "constant.numeric.custom",
+					"match": "\\b(NAMBARI|KIBONYEZO)\\b"
+				},
+				{
+					"name": "keyword.operator.custom",
+					"match": "\\b(ONGEZA|TOA|MARA|GAWA)\\b"
+				},
+				{
+					"name": "punctuation.definition.custom",
+					"match": "\\b(MABANO_KUSHOTO|MABANO_KULIA|NUKTA_KUSHOTO|NUKTA_KULIA|KOMA|MSHALE)\\b"
+				},
+				{
+					"name": "comparison.operator.custom",
+					"match": "\\b(NI_SAWA|SI_SAWA|NDOGO_ZAIDI|KUBWA_ZAIDI|NDOGO_ZAIDI_AU_SAWA|KUBWA_ZAIDI_AU_SAWA)\\b"
+				},
+				{
+					"name": "support.function.builtin.custom",
+					"match": "\\b(andika|andika_mstari_mpya|bonyeza|bonyeza_num|futa|cls|ni_nambari|ni_neno|ni_orodha|ni_njia|unganisha|toa|ongeza|urefu|swa)\\b"
+				}
+			]
+		}
+	},
 	"scopeName": "source.swa"
 }

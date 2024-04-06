@@ -14,7 +14,11 @@
       "id": "swa",
       "aliases": ["Swahili programming language", "swa"],
       "extensions": [".swa"],
-      "configuration": "./language-configuration.json"
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "icons/girl.png",
+        "dark": "icons/girl.png"
+      }
     }],
     "grammars": [{
       "language": "swa",
@@ -25,6 +29,12 @@
       "label": "SwahiliPro Theme",
       "uiTheme": "vs-dark",
       "path": "swa.tmTheme.json"
-    }]
+    }],
+    "commands": [
+      {
+        "command": "extension.runSwahiliCode",
+        "title": "Run Swahili Code"
+      }
+    ]
   }
 }

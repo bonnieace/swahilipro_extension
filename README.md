@@ -1,65 +1,39 @@
-# swahilipro README
+# SwahiliPro
 
-This is the README for your extension "swahilipro". After writing up a brief description, we recommend including the following sections.
+SwahiliPro is a language support tool designed to aid in writing and understanding programs written in the Swahili language. Built with the principles of Swahili in mind, this language aims to empower people worldwide to learn and develop software using their native language.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Syntax highlighting for Swahili programming language.
+- IntelliSense support for Swahili keywords and built-in functions.
+- Run Swahili code directly from Visual Studio Code.
 
-For example if there is an image subfolder under your extension project workspace:
+## Installation
 
-\!\[feature X\]\(images/feature-x.png\)
+To install SwahiliPro, follow these steps:
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+1. Open Visual Studio Code.
+2. Go to the Extensions view by clicking on the square icon in the sidebar or by pressing `Ctrl+Shift+X`.
+3. Search for "SwahiliPro" in the extensions marketplace.
+4. Click on the "Install" button next to the SwahiliPro extension.
 
-## Requirements
+## Usage
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Once SwahiliPro is installed, you can:
 
-## Extension Settings
+- Create new files with the `.swa` extension to write Swahili code.
+- Open existing `.swa` files to edit Swahili code with syntax highlighting and IntelliSense support.
+- Use the "swahilipro" command to open the compiler
+- use the "swa("filename")" command to execute Swahili code directly from Visual Studio Code.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Configuration
 
-For example:
+No additional configuration is required to use SwahiliPro. However, you can customize the theme and other settings in Visual Studio Code's settings.
 
-This extension contributes the following settings:
+## Support and Feedback
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+If you encounter any issues or have suggestions for improvements, please feel free to [open an issue](https://github.com/your-username/swahilipro/issues) on GitHub.
 
-## Known Issues
+## License
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This extension is licensed under the [MIT License](LICENSE).
