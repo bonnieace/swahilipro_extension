@@ -97,8 +97,9 @@
     }
   },
   "scripts": {
-    "check": "node --check extension.js",
-    "package": "vsce package"
+    "check": "node --check extension.js && node -e \"JSON.parse(require('fs').readFileSync('language-configuration.json')); JSON.parse(require('fs').readFileSync('syntaxes/swa.tmLanguage.json'));\"",
+    "package": "vsce package",
+    "package:runtime": "node scripts/package-with-runtime.js"
   },
   "devDependencies": {
     "@vscode/vsce": "^3.6.0"
