@@ -1,0 +1,79 @@
+name: package-platform-extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      compiler_tag:
+        description: "SwahiliPro compiler release tag, for example v2.0.0"
+        required: true
+        type: string
+      target:
+        description: "VS Code platform target"
+        required: true
+        type: choice
+        options:
+          - win32-x64
+          - linux-x64
+          - darwin-x64
+          - darwin-arm64
+      publish:
+        description: "Publish the resulting VSIX to the VS Code Marketplace"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install extension dependencies
+        run: npm install --no-package-lock
+
+      - name: Resolve compiler release asset
+        id: runtime
+        shell: bash
+        run: |
+          case "${{ inputs.target }}" in
+            win32-x64) asset="swa-windows-x86_64.exe" ;;
+            linux-x64) asset="swa-linux-x86_64" ;;
+            darwin-x64) asset="swa-darwin-x86_64" ;;
+            darwin-arm64) asset="swa-darwin-arm64" ;;
+            *) echo "Unsupported target" >&2; exit 2 ;;
+          esac
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+
+      - name: Download standalone swa runtime
+        env:
+          GH_TOKEN: ${{ secrets.SWAHILIPRO_COMPILER_TOKEN }}
+        run: |
+          mkdir -p runtime-download
+          gh release download "${{ inputs.compiler_tag }}" \
+            --repo bonnieace/swahilipro-compiler \
+            --pattern "${{ steps.runtime.outputs.asset }}" \
+            --dir runtime-download
+
+      - name: Build platform-specific VSIX
+        run: node scripts/package-with-runtime.js "runtime-download/${{ steps.runtime.outputs.asset }}" "${{ inputs.target }}"
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swahilipro-${{ inputs.target }}
+          path: dist/swahilipro-${{ inputs.target }}.vsix
+          if-no-files-found: error
+
+      - name: Publish to VS Code Marketplace
+        if: ${{ inputs.publish }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --packagePath "dist/swahilipro-${{ inputs.target }}.vsix" --pat "$VSCE_PAT"
