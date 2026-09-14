@@ -1,39 +1,87 @@
-# SwahiliPro
+# SwahiliPro for Visual Studio Code
 
-SwahiliPro is a language support tool designed to aid in writing and understanding programs written in the Swahili language. Built with the principles of Swahili in mind, this language aims to empower people worldwide to learn and develop software using their native language.
+The SwahiliPro extension is the primary desktop distribution for the SwahiliPro programming language.
 
-## Features
+A packaged Marketplace build includes the matching standalone `swa` runtime, so users can install the extension and immediately run `.swa` files without installing Python or pip.
 
-- Syntax highlighting for Swahili programming language.
-- IntelliSense support for Swahili keywords and built-in functions.
-- Run Swahili code directly from Visual Studio Code.
-
-## Installation
-
-To install SwahiliPro, follow these steps:
+## Install
 
 1. Open Visual Studio Code.
-2. Go to the Extensions view by clicking on the square icon in the sidebar or by pressing `Ctrl+Shift+X`.
-3. Search for "SwahiliPro" in the extensions marketplace.
-4. Click on the "Install" button next to the SwahiliPro extension.
+2. Open Extensions with `Ctrl+Shift+X`.
+3. Search for **SwahiliPro**.
+4. Click **Install**.
+5. Create or open a `.swa` file and press the Run button in the editor title bar.
 
-## Usage
+## What the extension provides
 
-Once SwahiliPro is installed, you can:
+- SwahiliPro v2 syntax highlighting.
+- `.swa` language registration.
+- Correct `#` comment behavior.
+- Brace/parenthesis/list auto-closing and indentation.
+- **SwahiliPro: Run File** command.
+- **SwahiliPro: Open REPL** command.
+- **SwahiliPro: New File** command.
+- A bundled standalone `swa` runtime in packaged builds.
 
-- Create new files with the `.swa` extension to write Swahili code.
-- Open existing `.swa` files to edit Swahili code with syntax highlighting and IntelliSense support.
-- Use the "swahilipro" command to open the compiler
-- use the "swa("filename")" command to execute Swahili code directly from Visual Studio Code.
+## Example
 
-## Configuration
+```swahili
+jumlisha(a, b) => a + b
 
-No additional configuration is required to use SwahiliPro. However, you can customize the theme and other settings in Visual Studio Code's settings.
+acha jina = "Amina"
+acha umri = 18
 
-## Support and Feedback
+ikiwa (umri >= 18) {
+    andika("Habari " + jina)
+}
 
-If you encounter any issues or have suggestions for improvements, please feel free to [open an issue](https://github.com/your-username/swahilipro/issues) on GitHub.
+andika(jumlisha(5, 10))
+```
 
-## License
+## Running code
 
-This extension is licensed under the [MIT License](LICENSE).
+Open a `.swa` file and either:
+
+- click the **Run** button in the editor title bar, or
+- open the Command Palette and choose **SwahiliPro: Run File**.
+
+The extension launches the bundled runtime as:
+
+```bash
+swa your-file.swa
+```
+
+For an interactive shell, use **SwahiliPro: Open REPL**, equivalent to:
+
+```bash
+swa
+```
+
+## Development runtime override
+
+Source checkouts do not commit generated native binaries. To test the extension against a locally built runtime, set:
+
+```text
+swahilipro.runtimePath
+```
+
+to the absolute path of a standalone `swa` or `swa.exe` binary.
+
+## Packaging with a runtime
+
+After building a standalone runtime from `bonnieace/swahilipro-compiler`, package a platform-specific VSIX with:
+
+```bash
+npm install
+node scripts/package-with-runtime.js /path/to/swa win32-x64
+```
+
+Example targets include `win32-x64`, `linux-x64`, `darwin-x64`, and `darwin-arm64`. The packaging script injects the binary as `runtime/swa` or `runtime/swa.exe`, creates the VSIX, then removes the temporary generated binary from the source tree.
+
+## Runtime philosophy
+
+The extension does not maintain a second implementation of SwahiliPro. It invokes the same standalone `swa` binary distributed as the CLI. This keeps the compiler, CLI and editor behavior on the same language version.
+
+## Support
+
+Issues and suggestions can be reported in this repository.
