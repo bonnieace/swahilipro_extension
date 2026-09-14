@@ -1,58 +1,110 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Swahili programming language",
-	"patterns": [
-		{
-			"include": "#comments"
-		},
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#tokens"
-		}
-	],
-	"repository": {
-		"comments": {
-			"patterns": [
-				{
-					"name": "comment.line.custom",
-					"match": "#.*$"
-				}
-			]
-		},
-		"keywords": {
-			"patterns": [
-				{
-					"name": "keyword.control.custom",
-					"match": "\\b(var|na|au|ikiwa|au_ikiwa|ikiwa_nyingine|kwa|hadi|wakati|njia|basi|funga|rudisha|vunja)\\b"
-				}
-			]
-		},
-		"tokens": {
-			"patterns": [
-				{
-					"name": "constant.numeric.custom",
-					"match": "\\b(NAMBARI|KIBONYEZO)\\b"
-				},
-				{
-					"name": "keyword.operator.custom",
-					"match": "\\b(ONGEZA|TOA|MARA|GAWA)\\b"
-				},
-				{
-					"name": "punctuation.definition.custom",
-					"match": "\\b(MABANO_KUSHOTO|MABANO_KULIA|NUKTA_KUSHOTO|NUKTA_KULIA|KOMA|MSHALE)\\b"
-				},
-				{
-					"name": "comparison.operator.custom",
-					"match": "\\b(NI_SAWA|SI_SAWA|NDOGO_ZAIDI|KUBWA_ZAIDI|NDOGO_ZAIDI_AU_SAWA|KUBWA_ZAIDI_AU_SAWA)\\b"
-				},
-				{
-					"name": "support.function.builtin.custom",
-					"match": "\\b(andika|andika_mstari_mpya|bonyeza|bonyeza_num|futa|cls|ni_nambari|ni_neno|ni_orodha|ni_njia|unganisha|toa|ongeza|urefu|swa)\\b"
-				}
-			]
-		}
-	},
-	"scopeName": "source.swa"
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SwahiliPro",
+  "scopeName": "source.swa",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#functions" },
+    { "include": "#keywords" },
+    { "include": "#builtins" },
+    { "include": "#constants" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.swa",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.swa",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.swa",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.swa",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.swa",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.swa",
+          "match": "\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.swa",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\([^)]*\\)\\s*(?:\\{|=>))"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "storage.type.swa",
+          "match": "\\bacha\\b"
+        },
+        {
+          "name": "keyword.control.swa",
+          "match": "\\b(ikiwa|vinginevyo|kwa|katika|wakati|rudisha|vunja|endelea)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.swa",
+          "match": "\\b(na|au|sio)\\b"
+        },
+        {
+          "name": "keyword.control.deprecated.swa",
+          "match": "\\b(VAR|NJIA|IKIWA|AU_IKIWA|IKIWA_NYINGINE|KWA|HADI|WAKATI|BASI|FUNGA|RUDISHA|VUNJA|CONTINUE)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.swa",
+          "match": "\\b(andika|andika_mstari_mpya|ingiza|ingiza_namba|futa|endesha|urefu|ongeza|ondoa|extend|ni_namba|ni_neno|ni_orodha|ni_function)\\b(?=\\s*\\()"
+        },
+        {
+          "name": "support.function.builtin.deprecated.swa",
+          "match": "\\b(ANDIKA|BONYEZA|BONYEZA_NAM|FUTA|CLS|UREFU|UNGANISHA|POP|EXTEND|NI_NAMBARI|NI_NENO|NI_ORODHA|NI_NJIA)\\b(?=\\s*\\()"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.swa",
+          "match": "\\b(kweli|uongo|KWELI|UONGO)\\b"
+        },
+        {
+          "name": "constant.language.swa",
+          "match": "\\bPI\\b"
+        }
+      ]
+    }
+  }
 }
