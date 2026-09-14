@@ -25,3 +25,15 @@ jobs:
 
       - name: Validate VS Code package contents
         run: npx vsce ls
+
+      - name: Smoke-test runtime injection
+        shell: bash
+        run: |
+          cat > /tmp/swa <<'EOF'
+          #!/bin/sh
+          echo "SwahiliPro test runtime"
+          EOF
+          chmod +x /tmp/swa
+          node scripts/package-with-runtime.js /tmp/swa linux-x64
+          test -f dist/swahilipro-linux-x64.vsix
+          unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swa'
