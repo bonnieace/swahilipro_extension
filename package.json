@@ -1,40 +1,106 @@
 {
   "name": "swahilipro",
-  "displayName": "swahilipro",
-  "description": "SwahiliPro is a language support tool designed to aid in writing and understanding programs written in the Swahili language. Built with the principles of Swahili in mind, this language aims to empower people worldwide to learn and develop software using their native language.",
-  "version": "0.0.1",
+  "displayName": "SwahiliPro",
+  "description": "SwahiliPro language support and bundled runtime for Visual Studio Code.",
+  "version": "0.1.0",
+  "publisher": "masota",
+  "main": "./extension.js",
   "engines": {
     "vscode": "^1.88.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "activationEvents": [
+    "onLanguage:swa",
+    "onCommand:swahilipro.runFile",
+    "onCommand:swahilipro.openRepl",
+    "onCommand:swahilipro.newFile"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bonnieace/swahilipro_extension.git"
+  },
   "contributes": {
-    "languages": [{
-      "id": "swa",
-      "aliases": ["Swahili programming language", "swa"],
-      "extensions": [".swa"],
-      "configuration": "./language-configuration.json",
-      "icon": {
-        "light": "icons/girl.png",
-        "dark": "icons/girl.png"
+    "languages": [
+      {
+        "id": "swa",
+        "aliases": [
+          "SwahiliPro",
+          "Swahili programming language",
+          "swa"
+        ],
+        "extensions": [
+          ".swa"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "icons/girl.png",
+          "dark": "icons/girl.png"
+        }
       }
-    }],
-    "grammars": [{
-      "language": "swa",
-      "scopeName": "source.swa",
-      "path": "./syntaxes/swa.tmLanguage.json"
-    }],
-    "themes": [{
-      "label": "SwahiliPro Theme",
-      "uiTheme": "vs-dark",
-      "path": "swa.tmTheme.json"
-    }],
+    ],
+    "grammars": [
+      {
+        "language": "swa",
+        "scopeName": "source.swa",
+        "path": "./syntaxes/swa.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "SwahiliPro Theme",
+        "uiTheme": "vs-dark",
+        "path": "swa.tmTheme.json"
+      }
+    ],
     "commands": [
       {
-        "command": "extension.runSwahiliCode",
-        "title": "Run Swahili Code"
+        "command": "swahilipro.runFile",
+        "title": "SwahiliPro: Run File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "swahilipro.openRepl",
+        "title": "SwahiliPro: Open REPL"
+      },
+      {
+        "command": "swahilipro.newFile",
+        "title": "SwahiliPro: New File"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "swahilipro.runFile",
+          "when": "editorLangId == swa",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "swahilipro.runFile",
+          "when": "editorLangId == swa",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SwahiliPro",
+      "properties": {
+        "swahilipro.runtimePath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to a standalone swa runtime. Packaged Marketplace builds use the bundled runtime automatically."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "check": "node --check extension.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.0"
   }
 }
