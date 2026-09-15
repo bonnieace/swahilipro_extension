@@ -8,6 +8,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Keeps the VS Code run terminal open after a `.swa` program finishes so output remains visible.
 - Runs files inside the user's normal integrated terminal instead of using the short-lived `swa` process as the terminal shell.
+- Makes both `swa` and `swahilipro` available when the bundled CLI is exposed on PATH.
+- Adds hover documentation and examples for SwahiliPro v2 keywords and built-ins.
+- Adds live syntax diagnostics so invalid `.swa` lines are underlined in the editor with the compiler error message.
 
 ## [0.1.1]
 
