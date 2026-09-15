@@ -12,16 +12,28 @@ function parseCompilerError(stderr, document) {
 
   const requestedLine = Math.max(Number(match[1]) - 1, 0);
   const line = Math.min(requestedLine, Math.max(document.lineCount - 1, 0));
-  const sourceLine = lines[locationIndex + 2] || document.lineAt(line).text;
+  const documentLine = document.lineAt(line).text;
+  const compilerSourceLine = lines[locationIndex + 2] || "";
   const pointerLine = lines[locationIndex + 3] || "";
   const pointerStart = pointerLine.indexOf("^");
-  const start = Math.max(pointerStart, 0);
-  const pointerWidth = pointerStart >= 0
+
+  // The compiler normally echoes the same source line that VS Code is showing.
+  // If it does not (for example after legacy-syntax translation), never use a
+  // column from transformed source to underline an unrelated character.
+  const sourceMatchesDocument = !compilerSourceLine || compilerSourceLine === documentLine;
+  const requestedStart = sourceMatchesDocument && pointerStart >= 0
+    ? pointerStart
+    : Math.max(documentLine.search(/\S/), 0);
+
+  const pointerWidth = sourceMatchesDocument && pointerStart >= 0
     ? Math.max((pointerLine.slice(pointerStart).match(/^\^+/) || [""])[0].length, 1)
-    : 1;
-  const actualLineLength = document.lineAt(line).text.length;
-  const safeStart = Math.min(start, actualLineLength);
-  const safeEnd = Math.min(Math.max(safeStart + pointerWidth, safeStart + 1), Math.max(actualLineLength, safeStart + 1));
+    : Math.max(documentLine.trim().length, 1);
+
+  const lineLength = documentLine.length;
+  const safeStart = Math.min(Math.max(requestedStart, 0), lineLength);
+  const safeEnd = lineLength === 0
+    ? safeStart
+    : Math.min(Math.max(safeStart + pointerWidth, safeStart + 1), lineLength);
 
   const firstLine = lines.find((entry) => entry.trim().length > 0) || "SwahiliPro syntax error";
   const message = firstLine.replace(/^.*?:\s*/, "") || firstLine;
@@ -30,11 +42,11 @@ function parseCompilerError(stderr, document) {
   diagnostic.source = "SwahiliPro";
   diagnostic.code = "syntax";
 
-  if (sourceLine && sourceLine !== document.lineAt(line).text) {
+  if (compilerSourceLine && compilerSourceLine !== documentLine) {
     diagnostic.relatedInformation = [
       new vscode.DiagnosticRelatedInformation(
         new vscode.Location(document.uri, range),
-        `Compiler source: ${sourceLine}`,
+        `Compiler checked translated source: ${compilerSourceLine}`,
       ),
     ];
   }
@@ -55,8 +67,11 @@ function registerDiagnostics(context, getRuntimePath) {
     timers.delete(key);
   }
 
-  function checkDocument(document) {
+  function checkDocument(document, generation, documentVersion) {
     if (document.languageId !== "swa") return;
+
+    const key = document.uri.toString();
+    if (generations.get(key) !== generation || document.version !== documentVersion) return;
 
     let executable;
     try {
@@ -65,10 +80,6 @@ function registerDiagnostics(context, getRuntimePath) {
       collection.delete(document.uri);
       return;
     }
-
-    const key = document.uri.toString();
-    const generation = (generations.get(key) || 0) + 1;
-    generations.set(key, generation);
 
     const cwd = document.isUntitled
       ? (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd())
@@ -87,11 +98,16 @@ function registerDiagnostics(context, getRuntimePath) {
     });
 
     child.on("error", () => {
-      if (generations.get(key) === generation) collection.delete(document.uri);
+      if (generations.get(key) === generation && document.version === documentVersion) {
+        collection.delete(document.uri);
+      }
     });
 
     child.on("close", (code) => {
-      if (generations.get(key) !== generation) return;
+      // An edit invalidates an in-flight compiler result immediately, even
+      // while the debounce timer for the next check has not fired yet.
+      if (generations.get(key) !== generation || document.version !== documentVersion) return;
+
       if (code === 0) {
         collection.delete(document.uri);
         return;
@@ -107,11 +123,20 @@ function registerDiagnostics(context, getRuntimePath) {
 
   function schedule(document, delay = 250) {
     if (document.languageId !== "swa") return;
+
     clearTimer(document.uri);
     const key = document.uri.toString();
+    const generation = (generations.get(key) || 0) + 1;
+    const documentVersion = document.version;
+    generations.set(key, generation);
+
+    // Do not leave an error from the previous document version visible while
+    // the user is typing and the next compiler check is waiting to run.
+    collection.delete(document.uri);
+
     timers.set(key, setTimeout(() => {
       timers.delete(key);
-      checkDocument(document);
+      checkDocument(document, generation, documentVersion);
     }, delay));
   }
 
