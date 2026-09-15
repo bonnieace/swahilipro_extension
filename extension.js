@@ -233,25 +233,29 @@ async function activeSwahiliDocument() {
   return document;
 }
 
+function quoteTerminalArgument(value) {
+  return `"${value.replace(/(["$`\\])/g, "\\$1")}"`;
+}
+
 async function runFile(context) {
   const document = await activeSwahiliDocument();
   if (!document) return;
 
-  let executable;
   try {
-    executable = ensureRuntime(context);
+    ensureRuntime(context);
   } catch (error) {
     vscode.window.showErrorMessage(error.message);
     return;
   }
 
+  // Use the user's normal integrated shell instead of making swa itself the shell.
+  // A short-lived swa process then returns control to the terminal instead of closing it.
   const terminal = vscode.window.createTerminal({
     name: `SwahiliPro: ${path.basename(document.fileName)}`,
-    shellPath: executable,
-    shellArgs: [document.fileName],
     cwd: path.dirname(document.fileName),
   });
   terminal.show(true);
+  terminal.sendText(`swa ${quoteTerminalArgument(document.fileName)}`, true);
 }
 
 function openRepl(context) {
