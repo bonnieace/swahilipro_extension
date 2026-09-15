@@ -37,3 +37,4 @@ jobs:
           node scripts/package-with-runtime.js /tmp/swa linux-x64
           test -f dist/swahilipro-linux-x64.vsix
           unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swa'
+          unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swahilipro'

@@ -3,12 +3,19 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { registerHoverProvider } = require("./hover");
+const { registerDiagnostics } = require("./diagnostics");
 
 const CLI_ENABLED_KEY = "swahilipro.cliEnabled";
 const CLI_PROMPTED_KEY = "swahilipro.cliPrompted.v1";
 
+function runtimeFilenames() {
+  const suffix = process.platform === "win32" ? ".exe" : "";
+  return [`swa${suffix}`, `swahilipro${suffix}`];
+}
+
 function runtimeFilename() {
-  return process.platform === "win32" ? "swa.exe" : "swa";
+  return runtimeFilenames()[0];
 }
 
 function bundledRuntimePath(context) {
@@ -51,8 +58,9 @@ function cliInstallDirectory() {
   return path.join(os.homedir(), ".swahilipro", "bin");
 }
 
-function cliInstallPath() {
-  return path.join(cliInstallDirectory(), runtimeFilename());
+function cliInstallPaths() {
+  const directory = cliInstallDirectory();
+  return runtimeFilenames().map((name) => path.join(directory, name));
 }
 
 function prependTerminalPath(context, directory, description) {
@@ -70,7 +78,7 @@ function exposeRuntimeToIntegratedTerminals(context) {
   prependTerminalPath(
     context,
     path.dirname(executable),
-    "Makes the SwahiliPro swa runtime available in new VS Code integrated terminals.",
+    "Makes the SwahiliPro swa and swahilipro commands available in new VS Code integrated terminals.",
   );
 }
 
@@ -140,16 +148,18 @@ function addDirectoryToUserPath(directory) {
 function copyRuntimeToCliLocation(context) {
   const source = ensureRuntime(context);
   const directory = cliInstallDirectory();
-  const destination = cliInstallPath();
+  const destinations = cliInstallPaths();
 
   fs.mkdirSync(directory, { recursive: true });
-  fs.copyFileSync(source, destination);
 
-  if (process.platform !== "win32") {
-    fs.chmodSync(destination, 0o755);
+  for (const destination of destinations) {
+    fs.copyFileSync(source, destination);
+    if (process.platform !== "win32") {
+      fs.chmodSync(destination, 0o755);
+    }
   }
 
-  return { directory, destination };
+  return { directory, destinations };
 }
 
 async function enableGlobalCli(context, showConfirmation = true) {
@@ -159,13 +169,13 @@ async function enableGlobalCli(context, showConfirmation = true) {
     prependTerminalPath(
       context,
       directory,
-      "Makes the SwahiliPro swa CLI available in new terminals.",
+      "Makes the SwahiliPro swa and swahilipro commands available in new terminals.",
     );
     await context.globalState.update(CLI_ENABLED_KEY, true);
 
     if (showConfirmation) {
       vscode.window.showInformationMessage(
-        "SwahiliPro CLI enabled. Open a new terminal and run `swa --version`.",
+        "SwahiliPro CLI enabled. Open a new terminal and run `swa -v` or `swahilipro -v`.",
       );
     }
   } catch (error) {
@@ -183,7 +193,7 @@ async function refreshEnabledCli(context) {
     prependTerminalPath(
       context,
       directory,
-      "Makes the SwahiliPro swa CLI available in new terminals.",
+      "Makes the SwahiliPro swa and swahilipro commands available in new terminals.",
     );
   } catch (_) {
     // A development checkout may not contain a packaged runtime yet.
@@ -197,7 +207,7 @@ async function maybeOfferCliSetup(context) {
 
   await context.globalState.update(CLI_PROMPTED_KEY, true);
   const choice = await vscode.window.showInformationMessage(
-    "Make the `swa` command available from your terminal?",
+    "Make the `swa` and `swahilipro` commands available from your terminal?",
     "Enable CLI",
     "Not now",
   );
@@ -233,25 +243,29 @@ async function activeSwahiliDocument() {
   return document;
 }
 
+function quoteTerminalArgument(value) {
+  return `"${value.replace(/(["$`\\])/g, "\\$1")}"`;
+}
+
 async function runFile(context) {
   const document = await activeSwahiliDocument();
   if (!document) return;
 
-  let executable;
   try {
-    executable = ensureRuntime(context);
+    ensureRuntime(context);
   } catch (error) {
     vscode.window.showErrorMessage(error.message);
     return;
   }
 
+  // Use the user's normal integrated shell instead of making swa itself the shell.
+  // A short-lived swa process then returns control to the terminal instead of closing it.
   const terminal = vscode.window.createTerminal({
     name: `SwahiliPro: ${path.basename(document.fileName)}`,
-    shellPath: executable,
-    shellArgs: [document.fileName],
     cwd: path.dirname(document.fileName),
   });
   terminal.show(true);
+  terminal.sendText(`swa ${quoteTerminalArgument(document.fileName)}`, true);
 }
 
 function openRepl(context) {
@@ -281,6 +295,8 @@ async function newFile() {
 async function activate(context) {
   exposeRuntimeToIntegratedTerminals(context);
   await refreshEnabledCli(context);
+  registerHoverProvider(context);
+  registerDiagnostics(context, () => ensureRuntime(context));
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swahilipro.runFile", () => runFile(context)),

@@ -17,8 +17,11 @@ const root = path.resolve(__dirname, "..");
 const runtimeSource = path.resolve(runtimeSourceArg);
 const runtimeDir = path.join(root, "runtime");
 const distDir = path.join(root, "dist");
-const runtimeName = target.startsWith("win32-") ? "swa.exe" : "swa";
-const runtimeDestination = path.join(runtimeDir, runtimeName);
+const windowsTarget = target.startsWith("win32-");
+const runtimeNames = windowsTarget
+  ? ["swa.exe", "swahilipro.exe"]
+  : ["swa", "swahilipro"];
+const runtimeDestinations = runtimeNames.map((name) => path.join(runtimeDir, name));
 
 if (!fs.existsSync(runtimeSource)) {
   console.error(`Runtime not found: ${runtimeSource}`);
@@ -28,15 +31,17 @@ if (!fs.existsSync(runtimeSource)) {
 fs.mkdirSync(runtimeDir, { recursive: true });
 fs.mkdirSync(distDir, { recursive: true });
 
-for (const name of ["swa", "swa.exe"]) {
+for (const name of ["swa", "swa.exe", "swahilipro", "swahilipro.exe"]) {
   const candidate = path.join(runtimeDir, name);
   if (fs.existsSync(candidate)) fs.rmSync(candidate);
 }
 
 try {
-  fs.copyFileSync(runtimeSource, runtimeDestination);
-  if (!target.startsWith("win32-")) {
-    fs.chmodSync(runtimeDestination, 0o755);
+  for (const destination of runtimeDestinations) {
+    fs.copyFileSync(runtimeSource, destination);
+    if (!windowsTarget) {
+      fs.chmodSync(destination, 0o755);
+    }
   }
 
   const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -53,7 +58,9 @@ try {
 
   console.log(`Created ${output}`);
 } finally {
-  if (fs.existsSync(runtimeDestination)) {
-    fs.rmSync(runtimeDestination);
+  for (const destination of runtimeDestinations) {
+    if (fs.existsSync(destination)) {
+      fs.rmSync(destination);
+    }
   }
 }
