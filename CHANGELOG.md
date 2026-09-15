@@ -4,6 +4,11 @@ All notable changes to the "swahilipro" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.2]
+
+- Keeps the VS Code run terminal open after a `.swa` program finishes so output remains visible.
+- Runs files inside the user's normal integrated terminal instead of using the short-lived `swa` process as the terminal shell.
+
 ## [0.1.1]
 
 - Added the new SwahiliPro brand icon for the VS Code Marketplace listing.
