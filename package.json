@@ -65,7 +65,7 @@
       },
       {
         "command": "swahilipro.enableCli",
-        "title": "SwahiliPro: Enable swa CLI in PATH"
+        "title": "SwahiliPro: Enable CLI in PATH"
       }
     ],
     "menus": {
@@ -90,14 +90,14 @@
         "swahilipro.runtimePath": {
           "type": "string",
           "default": "",
-          "description": "Optional path to a standalone swa runtime. Packaged Marketplace builds use the bundled runtime automatically."
+          "description": "Optional path to a standalone SwahiliPro runtime. Packaged Marketplace builds use the bundled runtime automatically."
         }
       }
     }
   },
   "scripts": {
-    "check": "node --check extension.js && node -e \"JSON.parse(require('fs').readFileSync('language-configuration.json')); JSON.parse(require('fs').readFileSync('syntaxes/swa.tmLanguage.json'));\"",
-    "package": "node -e \"console.error('Use npm run package:runtime -- <runtime-binary> <target> so the VSIX includes swa.'); process.exit(1)\"",
+    "check": "node --check extension.js && node --check hover.js && node -e \"JSON.parse(require('fs').readFileSync('language-configuration.json')); JSON.parse(require('fs').readFileSync('syntaxes/swa.tmLanguage.json'));\"",
+    "package": "node -e \"console.error('Use npm run package:runtime -- <runtime-binary> <target> so the VSIX includes SwahiliPro.'); process.exit(1)\"",
     "package:runtime": "node scripts/package-with-runtime.js"
   },
   "devDependencies": {
