@@ -3,6 +3,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { registerHoverProvider } = require("./hover");
 
 const CLI_ENABLED_KEY = "swahilipro.cliEnabled";
 const CLI_PROMPTED_KEY = "swahilipro.cliPrompted.v1";
@@ -293,6 +294,7 @@ async function newFile() {
 async function activate(context) {
   exposeRuntimeToIntegratedTerminals(context);
   await refreshEnabledCli(context);
+  registerHoverProvider(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swahilipro.runFile", () => runFile(context)),
