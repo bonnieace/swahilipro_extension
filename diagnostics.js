@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const path = require("path");
 const { spawn } = require("child_process");
+const { resolvePointerRange } = require("./diagnostic-utils");
 
 function parseCompilerError(stderr, document) {
   const lines = stderr.replace(/\r\n/g, "\n").split("\n");
@@ -11,38 +12,41 @@ function parseCompilerError(stderr, document) {
   if (!match) return null;
 
   const requestedLine = Math.max(Number(match[1]) - 1, 0);
-  const line = Math.min(requestedLine, Math.max(document.lineCount - 1, 0));
-  const documentLine = document.lineAt(line).text;
+  let line = Math.min(requestedLine, Math.max(document.lineCount - 1, 0));
+  let documentLine = document.lineAt(line).text;
   const compilerSourceLine = lines[locationIndex + 2] || "";
   const pointerLine = lines[locationIndex + 3] || "";
-  const pointerStart = pointerLine.indexOf("^");
 
-  // The compiler normally echoes the same source line that VS Code is showing.
-  // If it does not (for example after legacy-syntax translation), never use a
-  // column from transformed source to underline an unrelated character.
-  const sourceMatchesDocument = !compilerSourceLine || compilerSourceLine === documentLine;
-  const requestedStart = sourceMatchesDocument && pointerStart >= 0
-    ? pointerStart
-    : Math.max(documentLine.search(/\S/), 0);
+  let resolved = resolvePointerRange(documentLine, compilerSourceLine, pointerLine);
 
-  const pointerWidth = sourceMatchesDocument && pointerStart >= 0
-    ? Math.max((pointerLine.slice(pointerStart).match(/^\^+/) || [""])[0].length, 1)
-    : Math.max(documentLine.trim().length, 1);
-
-  const lineLength = documentLine.length;
-  const safeStart = Math.min(Math.max(requestedStart, 0), lineLength);
-  const safeEnd = lineLength === 0
-    ? safeStart
-    : Math.min(Math.max(safeStart + pointerWidth, safeStart + 1), lineLength);
+  // Some parser errors are naturally reported at EOF, which may be an empty
+  // final editor line. A zero-width marker is effectively invisible in VS Code,
+  // so anchor the fallback to the last character of the previous non-empty line.
+  if (documentLine.length === 0 && line > 0 && resolved.start === resolved.end) {
+    let previousLine = line - 1;
+    while (previousLine > 0 && document.lineAt(previousLine).text.length === 0) {
+      previousLine -= 1;
+    }
+    const previousText = document.lineAt(previousLine).text;
+    if (previousText.length > 0) {
+      line = previousLine;
+      documentLine = previousText;
+      resolved = {
+        start: Math.max(previousText.length - 1, 0),
+        end: previousText.length,
+        sourceMatches: false,
+      };
+    }
+  }
 
   const firstLine = lines.find((entry) => entry.trim().length > 0) || "SwahiliPro syntax error";
   const message = firstLine.replace(/^.*?:\s*/, "") || firstLine;
-  const range = new vscode.Range(line, safeStart, line, safeEnd);
+  const range = new vscode.Range(line, resolved.start, line, resolved.end);
   const diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
   diagnostic.source = "SwahiliPro";
   diagnostic.code = "syntax";
 
-  if (compilerSourceLine && compilerSourceLine !== documentLine) {
+  if (compilerSourceLine && !resolved.sourceMatches) {
     diagnostic.relatedInformation = [
       new vscode.DiagnosticRelatedInformation(
         new vscode.Location(document.uri, range),
