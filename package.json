@@ -2,7 +2,7 @@
   "name": "swahilipro",
   "displayName": "SwahiliPro",
   "description": "SwahiliPro language support and bundled runtime for Visual Studio Code.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "masota",
   "main": "./extension.js",
   "engines": {
@@ -45,13 +45,6 @@
         "language": "swa",
         "scopeName": "source.swa",
         "path": "./syntaxes/swa.tmLanguage.json"
-      }
-    ],
-    "themes": [
-      {
-        "label": "SwahiliPro Theme",
-        "uiTheme": "vs-dark",
-        "path": "swa.tmTheme.json"
       }
     ],
     "commands": [
@@ -103,5 +96,6 @@
   },
   "devDependencies": {
     "@vscode/vsce": "^3.6.0"
-  }
+  },
+  "icon": "icons/swahilipro.png"
 }
