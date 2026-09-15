@@ -4,6 +4,8 @@ The SwahiliPro extension is the primary desktop distribution for the SwahiliPro 
 
 A packaged Marketplace build includes the matching standalone `swa` runtime, so users can install the extension and immediately run `.swa` files without installing Python or pip.
 
+The extension respects your existing VS Code appearance. It keeps your current color theme and file icon theme instead of asking you to switch themes. SwahiliPro's existing language representation icon is used for `.swa` language registration where the active icon theme allows language icons.
+
 ## Install
 
 1. Open Visual Studio Code.
