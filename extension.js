@@ -1,9 +1,18 @@
 const vscode = require("vscode");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
+const { execFileSync } = require("child_process");
+
+const CLI_ENABLED_KEY = "swahilipro.cliEnabled";
+const CLI_PROMPTED_KEY = "swahilipro.cliPrompted.v1";
 
 function runtimeFilename() {
   return process.platform === "win32" ? "swa.exe" : "swa";
+}
+
+function bundledRuntimePath(context) {
+  return context.asAbsolutePath(path.join("runtime", runtimeFilename()));
 }
 
 function runtimePath(context) {
@@ -16,7 +25,7 @@ function runtimePath(context) {
     return path.resolve(configured);
   }
 
-  return context.asAbsolutePath(path.join("runtime", runtimeFilename()));
+  return bundledRuntimePath(context);
 }
 
 function ensureRuntime(context) {
@@ -36,6 +45,166 @@ function ensureRuntime(context) {
   }
 
   return executable;
+}
+
+function cliInstallDirectory() {
+  return path.join(os.homedir(), ".swahilipro", "bin");
+}
+
+function cliInstallPath() {
+  return path.join(cliInstallDirectory(), runtimeFilename());
+}
+
+function prependTerminalPath(context, directory, description) {
+  context.environmentVariableCollection.description = description;
+  context.environmentVariableCollection.prepend(
+    "PATH",
+    `${directory}${path.delimiter}`,
+  );
+}
+
+function exposeRuntimeToIntegratedTerminals(context) {
+  const executable = runtimePath(context);
+  if (!fs.existsSync(executable)) return;
+
+  prependTerminalPath(
+    context,
+    path.dirname(executable),
+    "Makes the SwahiliPro swa runtime available in new VS Code integrated terminals.",
+  );
+}
+
+function powershellQuote(value) {
+  return value.replace(/'/g, "''");
+}
+
+function addDirectoryToWindowsUserPath(directory) {
+  const escapedDirectory = powershellQuote(directory);
+  const script = [
+    `$dir = '${escapedDirectory}'`,
+    "$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')",
+    "$parts = if ([string]::IsNullOrWhiteSpace($userPath)) { @() } else { $userPath -split ';' }",
+    "$present = $parts | Where-Object { $_.TrimEnd('\\') -ieq $dir.TrimEnd('\\') }",
+    "if (-not $present) {",
+    "  $newPath = if ([string]::IsNullOrWhiteSpace($userPath)) { $dir } else { $userPath.TrimEnd(';') + ';' + $dir }",
+    "  [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')",
+    "}",
+  ].join("; ");
+
+  execFileSync(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script],
+    { windowsHide: true, stdio: "pipe" },
+  );
+}
+
+function shellProfilePath() {
+  const shell = path.basename(process.env.SHELL || "");
+
+  if (shell === "zsh") return path.join(os.homedir(), ".zshrc");
+  if (shell === "bash") return path.join(os.homedir(), ".bashrc");
+  if (shell === "fish") {
+    return path.join(os.homedir(), ".config", "fish", "config.fish");
+  }
+
+  return path.join(os.homedir(), ".profile");
+}
+
+function addDirectoryToPosixUserPath(directory) {
+  const profile = shellProfilePath();
+  fs.mkdirSync(path.dirname(profile), { recursive: true });
+
+  const shell = path.basename(process.env.SHELL || "");
+  const marker = "# SwahiliPro CLI";
+  const pathLine =
+    shell === "fish"
+      ? `set -gx PATH ${directory} $PATH`
+      : `export PATH="${directory}:$PATH"`;
+
+  const existing = fs.existsSync(profile) ? fs.readFileSync(profile, "utf8") : "";
+  if (existing.includes(marker) || existing.includes(directory)) return;
+
+  const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  fs.appendFileSync(profile, `${prefix}\n${marker}\n${pathLine}\n`, "utf8");
+}
+
+function addDirectoryToUserPath(directory) {
+  if (process.platform === "win32") {
+    addDirectoryToWindowsUserPath(directory);
+    return;
+  }
+
+  addDirectoryToPosixUserPath(directory);
+}
+
+function copyRuntimeToCliLocation(context) {
+  const source = ensureRuntime(context);
+  const directory = cliInstallDirectory();
+  const destination = cliInstallPath();
+
+  fs.mkdirSync(directory, { recursive: true });
+  fs.copyFileSync(source, destination);
+
+  if (process.platform !== "win32") {
+    fs.chmodSync(destination, 0o755);
+  }
+
+  return { directory, destination };
+}
+
+async function enableGlobalCli(context, showConfirmation = true) {
+  try {
+    const { directory } = copyRuntimeToCliLocation(context);
+    addDirectoryToUserPath(directory);
+    prependTerminalPath(
+      context,
+      directory,
+      "Makes the SwahiliPro swa CLI available in new terminals.",
+    );
+    await context.globalState.update(CLI_ENABLED_KEY, true);
+
+    if (showConfirmation) {
+      vscode.window.showInformationMessage(
+        "SwahiliPro CLI enabled. Open a new terminal and run `swa --version`.",
+      );
+    }
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Could not enable the SwahiliPro CLI: ${error.message}`,
+    );
+  }
+}
+
+async function refreshEnabledCli(context) {
+  if (!context.globalState.get(CLI_ENABLED_KEY, false)) return;
+
+  try {
+    const { directory } = copyRuntimeToCliLocation(context);
+    prependTerminalPath(
+      context,
+      directory,
+      "Makes the SwahiliPro swa CLI available in new terminals.",
+    );
+  } catch (_) {
+    // A development checkout may not contain a packaged runtime yet.
+  }
+}
+
+async function maybeOfferCliSetup(context) {
+  if (context.globalState.get(CLI_ENABLED_KEY, false)) return;
+  if (context.globalState.get(CLI_PROMPTED_KEY, false)) return;
+  if (!fs.existsSync(runtimePath(context))) return;
+
+  await context.globalState.update(CLI_PROMPTED_KEY, true);
+  const choice = await vscode.window.showInformationMessage(
+    "Make the `swa` command available from your terminal?",
+    "Enable CLI",
+    "Not now",
+  );
+
+  if (choice === "Enable CLI") {
+    await enableGlobalCli(context);
+  }
 }
 
 async function activeSwahiliDocument() {
@@ -109,12 +278,20 @@ async function newFile() {
   await vscode.window.showTextDocument(document);
 }
 
-function activate(context) {
+async function activate(context) {
+  exposeRuntimeToIntegratedTerminals(context);
+  await refreshEnabledCli(context);
+
   context.subscriptions.push(
     vscode.commands.registerCommand("swahilipro.runFile", () => runFile(context)),
     vscode.commands.registerCommand("swahilipro.openRepl", () => openRepl(context)),
     vscode.commands.registerCommand("swahilipro.newFile", newFile),
+    vscode.commands.registerCommand("swahilipro.enableCli", () =>
+      enableGlobalCli(context),
+    ),
   );
+
+  await maybeOfferCliSetup(context);
 }
 
 function deactivate() {}
