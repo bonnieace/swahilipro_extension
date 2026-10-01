@@ -2,6 +2,7 @@
 
 Status: proposed implementation; documentation only.
 Date: 2026-09-30.
+Revised 2026-10-01 for Firebase Authentication, Firestore, and Next.js client authorization.
 Inspected master commit: 0dc2d6b053bd5a0d08d090ea8e51c094ca8e5a67.
 Companion plans:
 - https://github.com/bonnieace/swahilipro_web/blob/docs/agent-platform-plan/docs/agent-platform-plan.md
@@ -9,7 +10,7 @@ Companion plans:
 
 ## Goal and ownership
 
-Provide a dedicated SwahiliPro chat sidebar alongside existing language tooling, with browser sign-in, shared credits, model selection, explicit file context, streamed responses, reviewed edits, approved commands, and resumable sessions. Add native VS Code Chat participation as a later integration. Authentication and accounts use self-hosted Supabase; paid requests go through the Next.js gateway.
+Provide a dedicated SwahiliPro chat sidebar alongside existing language tooling, with browser sign-in, shared credits, model selection, explicit file context, streamed responses, reviewed edits, approved commands, and resumable sessions. Add native VS Code Chat participation as a later integration. Website identity uses Firebase Authentication; native clients use Next.js-issued application grants; paid requests go through the Next.js gateway.
 
 The Python agent engine lives in the compiler repository and ships in the same standalone swa binary already bundled by this extension. The extension owns editor UI, credentials, document buffers, and approval surfaces. The engine owns model/tool orchestration and protocol-independent policy. Next.js owns billing, model adapters, and backend authorization. Avoid a second TypeScript implementation of the agent loop.
 
@@ -56,7 +57,7 @@ Proposed modules:
 | Module | Responsibility |
 | --- | --- |
 | src/chat/view.js and media/ | Bundled sidebar UI and validated messages |
-| src/auth/session.js | OAuth browser login and token lifecycle |
+| src/auth/session.js | Browser approval and application token lifecycle |
 | src/agent/process.js | Runtime resolution, spawn, handshake, lifecycle |
 | src/agent/protocol.js | JSON-lines framing, schemas, correlation, limits |
 | src/workspace/context.js | Selected roots, file/selection snapshots, exclusions |
@@ -67,17 +68,21 @@ Proposed modules:
 
 Keep CommonJS initially; do not make a TypeScript rewrite a prerequisite. Add a lockfile, lint, meaningful unit/integration tests, and a bundling step only as needed for the UI. Keep account and engine startup lazy so ordinary highlighting/hover remains fast and usable offline.
 
-## Supabase login and SecretStorage
+## Firebase accounts, client authorization, and SecretStorage
 
-Depend on the web plan's exact self-hosted Auth compatibility gate. Register the extension as a public OAuth client; verify PKCE S256, state, callback constraints, refresh rotation, supported scopes/claims, and revocation. Supabase website social login alone does not prove this client flow.
+Use the same application authorization protocol as the CLI and web plan. Firebase handles browser account sign-in, not an OAuth authorization server for the extension.
 
-Open the system browser with vscode.env.openExternal. Implement a UriHandler and use the supported URI/external-URI facilities as appropriate, testing standard VS Code, Insiders, and remote hosts rather than hard-coding a callback that only works locally. Check state, pending-login identity, callback path, timeouts, cancellation, and replay. Device-code fallback is conditional on verified server support.
+On explicit Sign in, generate a verifier and send S256 challenge/client label to Next.js /api/v1/auth/client/start. Keep its high-entropy polling secret in host memory. Open the returned trusted website verification URL with vscode.env.openExternal and show the matching confirmation phrase/code. The user signs into Firebase and explicitly approves that request. Poll with bounded intervals/expiry, then complete using polling secret plus verifier; the server returns short-lived application access and rotating refresh credentials.
 
-Keep tokens in context.secrets, never globalState, workspace settings, webview state, logs, or child command-line arguments. Account preferences can use nonsecret storage. Isolate secrets by configured trusted origin/account; serialize refresh and atomically update rotating credentials. Validate server account identity rather than trusting decoded JWT claims for authorization.
+No callback URI or UriHandler token exchange is needed for the initial flow. This also supports remote-host login in a local browser using the shared Next.js approval/polling protocol. Do not claim RFC 8628/OAuth compliance for this application protocol. Test wrong verifier, stolen URL, approval to wrong account, denial, expiry, duplicate completion, polling limits, cancellation and multiple simultaneous sign-in attempts.
 
-The host owns extension tokens and sends only short-lived credentials to the engine through private stdio IPC; refresh stays in the host. CLI and extension may have separate revocable grants while sharing one account balance. Do not copy the CLI keychain into extension storage or silently share refresh tokens.
+Store application refresh credentials in context.secrets; access credentials stay in memory where feasible. No tokens in globalState, webview state, settings, process arguments, logs or URLs. Isolate by trusted origin/account. Serialize refresh and follow the server's tested reuse and lost-response policy. Never request/store website passwords or Firebase Admin/service-account credentials.
 
-Sign out stops active work, clears local secrets, and requests supported remote revocation. Explain when remote revocation is unconfirmed. Backend revocation checks handle already-issued JWTs according to the web plan; local token removal alone is not a guarantee of immediate server invalidation.
+The host passes only short-lived application credentials to the Python engine over private stdio IPC. Renewal stays in the host. CLI and extension use separate revocable grants with one Firebase UID and shared credit wallet; never copy refresh tokens between them.
+
+Sign out cancels active work, clears SecretStorage and requests grant revocation. Account disable/delete/sign-out-everywhere must coordinate Firebase account state and Next.js grant invalidation. Firebase account-wide refresh-token revocation is not sufficient to revoke application credentials. Offline remote revocation remains unconfirmed and is reported clearly.
+
+The extension uses Next.js for credits, models and inference, not direct Firestore financial writes. Trusted endpoint configuration is user-controlled and cannot be overridden by repository content.
 
 ## Shared compiler engine interface
 
@@ -146,7 +151,7 @@ Keep Marketplace publishing manual/controlled under existing workflows; no publi
 ## Ordered implementation and acceptance
 
 1. **Foundation and sidebar:** add manifest contribution, themed accessible UI, modules, lockfile, test harness, and a fake agent host. Existing language/run features pass regression checks.
-2. **Accounts:** gated on Supabase compatibility; browser login, SecretStorage, account/credits/models UI. Test wrong state, timeout, replay, refresh races, denied access, offline logout, and secret redaction.
+2. **Accounts:** gated on the Firebase web/client-grant implementation; browser login, SecretStorage, account/credits/models UI. Test wrong verifier, stolen verification URL, timeout, replay, refresh races, denied access, offline logout, and secret redaction.
 3. **Engine connection and read-only chat:** gated on compiler protocol and gateway. Test split frames, startup failure, incompatible binary, stream disconnect, credit exhaustion, cancellation, and safe view reload without duplicate paid requests.
 4. **Editor tools and approvals:** host buffer adapter, context chips, diff views, WorkspaceEdit, command execution. Test dirty buffers, stale patches, multi-root boundaries, denied/duplicate approvals, ignored secrets, process timeout, and undo preserving user changes.
 5. **History and native chat:** bind sessions to root/account/origin, list/resume/delete; add @swahilipro only after native API spike. Verify no automatic command replay or competing loops.
@@ -168,4 +173,4 @@ Official references checked:
 - https://code.visualstudio.com/api/extension-guides/ai/chat
 - https://code.visualstudio.com/api/extension-guides/ai/language-model-chat-provider
 
-This plan changes no extension behavior and does not establish that the deployed Supabase version, native chat APIs, or live gateway integrations have passed compatibility tests.
+This plan changes no extension behavior and does not establish that the Firebase project and application authorization protocol, native chat APIs, or live gateway integrations have passed compatibility tests.
