@@ -106,7 +106,9 @@ class Controller {
       throw new ClientError('unsupported_host_operation');
     });
     this.engine = engine; this.enginePaid = paid;
-    try { await engine.ready; await engine.request('initialize', { workspace: root, mode: 'host', ...(paid ? { apiOrigin: session.api.origin, uid: profile.uid } : {}) }); }
+    try { await engine.ready; const initialized = await engine.request('initialize', { workspace: root, mode: 'host', ...(paid ? { apiOrigin: session.api.origin, uid: profile.uid } : {}) });
+      if (initialized.workspace !== root || initialized.mode !== 'host' || initialized.capabilities?.read !== true || initialized.capabilities?.hostEdits !== true || (paid && initialized.capabilities?.prompt !== true)) throw new ClientError('incompatible_engine_capabilities');
+    }
     catch (error) { engine.dispose(); if (this.engine === engine) this.engine = null; throw error; }
     if (generation !== this.generation) { engine.dispose(); throw new ClientError('cancelled'); }
     return engine;
