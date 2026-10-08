@@ -12,7 +12,8 @@ in VS Code settings. The gateway must be deployed/configured before live use.
    Older released compilers still support language features, but chat refuses them.
 2. Open and trust a local workspace. Remote SSH, WSL, containers and virtual
    workspaces are not supported in this preview.
-3. Set `swahilipro.apiOrigin` in **user settings** to the deployed HTTPS origin.
+3. The gateway defaults to https://swahilipro.com. For staging, set
+   `swahilipro.apiOrigin` in **user settings** to that deployed HTTPS origin.
    Workspace settings cannot choose the gateway or runtime. Optionally set the
    user `swahilipro.runtimePath` to a matching standalone compiler.
 4. Open the SwahiliPro activity bar and choose **Sign in**. Compare the eight-character

@@ -5,7 +5,7 @@ const { Session, diskLock } = require('../auth/session');
 const { EngineProcess } = require('../agent/process');
 const { EditorTools, fingerprint } = require('../workspace/edits');
 const { WorkspacePolicy, validText, hash } = require('../workspace/policy');
-function userSetting(vscode, key) { return vscode.workspace.getConfiguration('swahilipro').inspect(key)?.globalValue || ''; }
+function userSetting(vscode, key) { return vscode.workspace.getConfiguration('swahilipro').inspect(key)?.globalValue ?? (key === 'apiOrigin' ? 'https://swahilipro.com' : ''); }
 function safeError(error) { return typeof error?.code === 'string' && /^[a-z_]{1,100}$/.test(error.code) ? error.code.replace(/_/g, ' ') : 'The operation could not be completed.'; }
 function catalog(row) {
   if (typeof row.enabled !== 'boolean' || !Array.isArray(row.models) || row.models.length > 30) throw new ClientError('invalid_model_catalog');

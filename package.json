@@ -132,7 +132,7 @@
         },
         "swahilipro.apiOrigin": {
           "type": "string",
-          "default": "",
+          "default": "https://swahilipro.com",
           "scope": "machine",
           "description": "HTTPS origin of your deployed SwahiliPro account and model gateway. Set in user settings."
         }
