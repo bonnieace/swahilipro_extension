@@ -18,10 +18,18 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: npm install --no-package-lock
+        run: npm ci
 
       - name: Validate extension source
         run: npm run check
+
+      - name: Lint and test host components
+        run: |
+          npm run lint
+          npm test
+
+      - name: Verify editor buffers and undo
+        run: xvfb-run -a npm run test:editor
 
       - name: Validate VS Code package contents
         run: npx vsce ls
@@ -31,10 +39,11 @@ jobs:
         run: |
           cat > /tmp/swa <<'EOF'
           #!/bin/sh
-          echo "SwahiliPro test runtime"
+          echo '{"v":1,"type":"hello","protocol":1}'
           EOF
           chmod +x /tmp/swa
           node scripts/package-with-runtime.js /tmp/swa linux-x64
           test -f dist/swahilipro-linux-x64.vsix
           unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swa'
           unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swahilipro'
+

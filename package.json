@@ -1,7 +1,7 @@
 {
   "name": "swahilipro",
   "displayName": "SwahiliPro",
-  "description": "SwahiliPro language support and bundled runtime for Visual Studio Code.",
+  "description": "SwahiliPro language support, account access and AI chat with a bundled runtime.",
   "version": "0.1.2",
   "publisher": "masota",
   "main": "./extension.js",
@@ -9,7 +9,8 @@
     "vscode": "^1.88.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Other"
   ],
   "activationEvents": [
     "onStartupFinished",
@@ -17,7 +18,15 @@
     "onCommand:swahilipro.runFile",
     "onCommand:swahilipro.openRepl",
     "onCommand:swahilipro.newFile",
-    "onCommand:swahilipro.enableCli"
+    "onCommand:swahilipro.enableCli",
+    "onView:swahilipro.chat",
+    "onCommand:swahilipro.openChat",
+    "onCommand:swahilipro.signIn",
+    "onCommand:swahilipro.signOut",
+    "onCommand:swahilipro.newSession",
+    "onCommand:swahilipro.attachSelection",
+    "onCommand:swahilipro.explainSelection",
+    "onCommand:swahilipro.reviewEdit"
   ],
   "repository": {
     "type": "git",
@@ -66,6 +75,34 @@
       {
         "command": "swahilipro.enableCli",
         "title": "SwahiliPro: Enable CLI in PATH"
+      },
+      {
+        "command": "swahilipro.openChat",
+        "title": "SwahiliPro: Open Chat"
+      },
+      {
+        "command": "swahilipro.signIn",
+        "title": "SwahiliPro: Sign In"
+      },
+      {
+        "command": "swahilipro.signOut",
+        "title": "SwahiliPro: Sign Out"
+      },
+      {
+        "command": "swahilipro.newSession",
+        "title": "SwahiliPro: New Chat"
+      },
+      {
+        "command": "swahilipro.attachSelection",
+        "title": "SwahiliPro: Attach Selection"
+      },
+      {
+        "command": "swahilipro.explainSelection",
+        "title": "SwahiliPro: Explain Selection"
+      },
+      {
+        "command": "swahilipro.reviewEdit",
+        "title": "SwahiliPro: Review Proposed Edit"
       }
     ],
     "menus": {
@@ -90,18 +127,69 @@
         "swahilipro.runtimePath": {
           "type": "string",
           "default": "",
-          "description": "Optional path to a standalone SwahiliPro runtime. Packaged Marketplace builds use the bundled runtime automatically."
+          "description": "Optional path to a standalone SwahiliPro runtime. Packaged Marketplace builds use the bundled runtime automatically.",
+          "scope": "machine"
+        },
+        "swahilipro.apiOrigin": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "HTTPS origin of your deployed SwahiliPro account and model gateway. Set in user settings."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "swahilipro",
+          "title": "SwahiliPro",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "swahilipro": [
+        {
+          "type": "webview",
+          "id": "swahilipro.chat",
+          "name": "Chat"
+        }
+      ]
     }
   },
   "scripts": {
-    "check": "node --check extension.js && node --check hover.js && node --check diagnostics.js && node -e \"JSON.parse(require('fs').readFileSync('language-configuration.json')); JSON.parse(require('fs').readFileSync('syntaxes/swa.tmLanguage.json'));\"",
+    "check": "node scripts/check.js",
     "package": "node -e \"console.error('Use npm run package:runtime -- <runtime-binary> <target> so the VSIX includes SwahiliPro.'); process.exit(1)\"",
-    "package:runtime": "node scripts/package-with-runtime.js"
+    "package:runtime": "node scripts/package-with-runtime.js",
+    "lint": "eslint . --ext .js",
+    "test": "node --test tests/*.test.js",
+    "test:editor": "node tests/run-editor.js"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.6.0"
+    "@vscode/vsce": "3.6.0",
+    "eslint": "8.57.1",
+    "@vscode/test-electron": "2.5.2"
   },
-  "icon": "icons/swahilipro.png"
+  "icon": "icons/swahilipro.png",
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Language features remain available. Running code, diagnostics and agent workspace access require trust.",
+      "restrictedConfigurations": [
+        "swahilipro.runtimePath",
+        "swahilipro.apiOrigin"
+      ]
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "The native runtime requires a local file workspace."
+    }
+  },
+  "dependencies": {
+    "ignore": "5.3.2",
+    "proper-lockfile": "4.1.2"
+  }
 }

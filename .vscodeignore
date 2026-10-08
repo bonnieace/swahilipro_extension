@@ -6,3 +6,9 @@ dist/**
 .gitignore
 runtime/.gitignore
 vsc-extension-quickstart.md
+
+tests/**
+.eslintrc.json
+package-lock.json
+runtime-download/**
+docs/**

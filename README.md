@@ -97,3 +97,17 @@ The extension does not maintain a second implementation of SwahiliPro. It invoke
 ## Support
 
 Issues and suggestions can be reported in this repository.
+
+
+## Account and AI chat preview
+
+Open the **SwahiliPro** activity bar to sign in through your deployed account
+website, check available credits, choose a model, and stream text chat. Set the
+HTTPS `swahilipro.apiOrigin` in user settings and use a protocol-v1 compiler.
+Select code and choose **SwahiliPro: Attach Selection** or **Explain Selection**
+to include explicit editor context. **Review Proposed Edit** previews a replacement
+text file and applies it through VS Code only after approval.
+
+See [account/chat setup and preview limits](docs/account-chat.md). This preview
+requires a trusted local workspace and the matching Next.js/compiler changes.
+Model responses do not automatically run commands or edit your repository.

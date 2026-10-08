@@ -46,7 +46,14 @@ function registerDiagnostics(context, getRuntimePath) {
   const collection = vscode.languages.createDiagnosticCollection("swahilipro");
   const timers = new Map();
   const generations = new Map();
-  context.subscriptions.push(collection);
+  const children = new Map();
+  let disposed = false;
+  context.subscriptions.push(collection, { dispose() {
+    disposed = true;
+    for (const timer of timers.values()) clearTimeout(timer);
+    for (const child of children.values()) child.kill();
+    timers.clear(); children.clear(); generations.clear();
+  } });
 
   function clearTimer(uri) {
     const key = uri.toString();
@@ -56,7 +63,7 @@ function registerDiagnostics(context, getRuntimePath) {
   }
 
   function checkDocument(document) {
-    if (document.languageId !== "swa") return;
+    if (disposed || !vscode.workspace.isTrusted || document.languageId !== "swa" || Buffer.byteLength(document.getText()) > 32768) return;
 
     let executable;
     try {
@@ -67,6 +74,7 @@ function registerDiagnostics(context, getRuntimePath) {
     }
 
     const key = document.uri.toString();
+    children.get(key)?.kill();
     const generation = (generations.get(key) || 0) + 1;
     generations.set(key, generation);
 
@@ -80,9 +88,14 @@ function registerDiagnostics(context, getRuntimePath) {
       stdio: ["pipe", "pipe", "pipe"],
     });
 
+    children.set(key, child);
+    const deadline = setTimeout(() => child.kill(), 5000);
+    child.stdout.resume();
+    child.stdin.on("error", () => {});
     let stderr = "";
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk) => {
+      if (Buffer.byteLength(stderr) + Buffer.byteLength(chunk) > 32768) { child.kill(); return; }
       stderr += chunk;
     });
 
@@ -91,7 +104,9 @@ function registerDiagnostics(context, getRuntimePath) {
     });
 
     child.on("close", (code) => {
-      if (generations.get(key) !== generation) return;
+      clearTimeout(deadline);
+      if (children.get(key) === child) children.delete(key);
+      if (disposed || !vscode.workspace.isTrusted || generations.get(key) !== generation) return;
       if (code === 0) {
         collection.delete(document.uri);
         return;
@@ -106,7 +121,7 @@ function registerDiagnostics(context, getRuntimePath) {
   }
 
   function schedule(document, delay = 250) {
-    if (document.languageId !== "swa") return;
+    if (disposed || !vscode.workspace.isTrusted || document.languageId !== "swa" || Buffer.byteLength(document.getText()) > 32768) return;
     clearTimer(document.uri);
     const key = document.uri.toString();
     timers.set(key, setTimeout(() => {
@@ -125,6 +140,7 @@ function registerDiagnostics(context, getRuntimePath) {
     vscode.workspace.onDidSaveTextDocument((document) => schedule(document, 0)),
     vscode.workspace.onDidCloseTextDocument((document) => {
       clearTimer(document.uri);
+      children.get(document.uri.toString())?.kill();
       generations.delete(document.uri.toString());
       collection.delete(document.uri);
     }),
@@ -132,3 +148,4 @@ function registerDiagnostics(context, getRuntimePath) {
 }
 
 module.exports = { parseCompilerError, registerDiagnostics };
+

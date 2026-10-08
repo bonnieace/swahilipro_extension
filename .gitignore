@@ -1,2 +1,6 @@
 node_modules
 *.vsix
+node_modules/
+dist/
+.vscode-test/
+runtime-download/
