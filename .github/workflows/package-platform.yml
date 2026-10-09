@@ -37,7 +37,7 @@ jobs:
           node-version: "20"
 
       - name: Install extension dependencies
-        run: npm install --no-package-lock
+        run: npm ci
 
       - name: Resolve compiler release asset
         id: runtime
@@ -55,15 +55,21 @@ jobs:
       - name: Download standalone swa runtime
         env:
           GH_TOKEN: ${{ secrets.SWAHILIPRO_COMPILER_TOKEN }}
+          COMPILER_TAG: ${{ inputs.compiler_tag }}
+          RUNTIME_ASSET: ${{ steps.runtime.outputs.asset }}
         run: |
           mkdir -p runtime-download
-          gh release download "${{ inputs.compiler_tag }}" \
+          gh release download "$COMPILER_TAG" \
             --repo bonnieace/swahilipro-compiler \
-            --pattern "${{ steps.runtime.outputs.asset }}" \
+            --pattern "$RUNTIME_ASSET" \
             --dir runtime-download
 
       - name: Build platform-specific VSIX
-        run: node scripts/package-with-runtime.js "runtime-download/${{ steps.runtime.outputs.asset }}" "${{ inputs.target }}"
+        env:
+          RUNTIME_ASSET: ${{ steps.runtime.outputs.asset }}
+          RUNTIME_TARGET: ${{ inputs.target }}
+          COMPILER_TAG: ${{ inputs.compiler_tag }}
+        run: node scripts/package-with-runtime.js "runtime-download/$RUNTIME_ASSET" "$RUNTIME_TARGET" "$COMPILER_TAG"
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
@@ -77,3 +83,4 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: npx vsce publish --packagePath "dist/swahilipro-${{ inputs.target }}.vsix" --pat "$VSCE_PAT"
+

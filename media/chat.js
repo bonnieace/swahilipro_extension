@@ -1,0 +1,32 @@
+const vscode = acquireVsCodeApi();
+const element = id => document.getElementById(id);
+const post = type => vscode.postMessage({ type });
+for (const id of ['newSession', 'signIn', 'signOut', 'refresh', 'settings', 'attachSelection', 'removeAttachment', 'requestStatus', 'stop']) element(id).addEventListener('click', () => post(id));
+element('composer').addEventListener('submit', event => {
+  event.preventDefault(); const text = element('prompt').value;
+  if (!text.trim() || element('send').disabled) return;
+  vscode.postMessage({ type: 'send', text, model: element('model').value }); element('prompt').value = '';
+});
+window.addEventListener('message', event => {
+  if (event.data?.type !== 'state') return;
+  const state = event.data.state;
+  element('account').textContent = state.account ? state.account.name || state.account.email || 'Signed in' : 'Sign in to use AI chat';
+  element('credits').textContent = state.credits === null ? '' : `Available: ${state.credits.toLocaleString()} microcredits`;
+  element('signIn').hidden = !!state.account; element('signOut').hidden = !state.account;
+  element('error').textContent = state.error;
+  element('notice').textContent = !state.trusted ? 'Trust this workspace to use chat and run code.' : state.account && !state.enabled ? 'AI is currently unavailable on the gateway.' : 'Text chat. Model responses do not automatically run commands or edit files.';
+  const selected = element('model').value;
+  element('model').replaceChildren(...state.models.map(model => { const option = document.createElement('option'); option.value = model.id; option.textContent = model.name; return option; }));
+  if (state.models.some(m => m.id === selected)) element('model').value = selected;
+  const messages = state.messages.map(message => { const article = document.createElement('article'); const label = document.createElement('strong'); label.textContent = message.role === 'user' ? 'You' : 'SwahiliPro'; const text = document.createElement('pre'); text.textContent = message.content; article.append(label, text); return article; });
+  element('messages').replaceChildren(...messages);
+  element('attachment').textContent = state.attachment || ''; element('removeAttachment').hidden = !state.attachment;
+  element('send').disabled = state.busy || !state.account || !state.enabled || !state.models.length || !state.trusted;
+  element('stop').hidden = !state.busy;
+  for (const id of ['refresh', 'attachSelection', 'removeAttachment', 'model']) element(id).disabled = state.busy;
+  element('receipt').hidden = !state.requestId;
+  element('requestId').textContent = state.requestId ? `Request: ${state.requestId}` : '';
+  element('requestStatus').disabled = state.busy;
+  element('status').textContent = state.receipt || '';
+});
+post('ready');

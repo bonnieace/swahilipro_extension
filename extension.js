@@ -6,6 +6,15 @@ const { execFileSync } = require("child_process");
 const { registerHoverProvider } = require("./hover");
 const { registerDiagnostics } = require("./diagnostics");
 
+const { Controller, userSetting } = require("./src/chat/controller");
+const { ChatView } = require("./src/chat/view");
+
+function requireTrust() {
+  if (vscode.workspace.isTrusted) return true;
+  vscode.window.showErrorMessage("Trust this workspace before running SwahiliPro or enabling the CLI.");
+  return false;
+}
+
 const CLI_ENABLED_KEY = "swahilipro.cliEnabled";
 const CLI_PROMPTED_KEY = "swahilipro.cliPrompted.v1";
 
@@ -23,10 +32,7 @@ function bundledRuntimePath(context) {
 }
 
 function runtimePath(context) {
-  const configured = vscode.workspace
-    .getConfiguration("swahilipro")
-    .get("runtimePath", "")
-    .trim();
+  const configured = String(userSetting(vscode, "runtimePath")).trim();
 
   if (configured) {
     return path.resolve(configured);
@@ -163,6 +169,7 @@ function copyRuntimeToCliLocation(context) {
 }
 
 async function enableGlobalCli(context, showConfirmation = true) {
+  if (!requireTrust()) return;
   try {
     const { directory } = copyRuntimeToCliLocation(context);
     addDirectoryToUserPath(directory);
@@ -248,6 +255,7 @@ function quoteTerminalArgument(value) {
 }
 
 async function runFile(context) {
+  if (!requireTrust()) return;
   const document = await activeSwahiliDocument();
   if (!document) return;
 
@@ -269,6 +277,7 @@ async function runFile(context) {
 }
 
 function openRepl(context) {
+  if (!requireTrust()) return;
   let executable;
   try {
     executable = ensureRuntime(context);
@@ -293,8 +302,11 @@ async function newFile() {
 }
 
 async function activate(context) {
-  exposeRuntimeToIntegratedTerminals(context);
-  await refreshEnabledCli(context);
+  context.environmentVariableCollection.clear();
+  if (vscode.workspace.isTrusted) {
+    exposeRuntimeToIntegratedTerminals(context);
+    await refreshEnabledCli(context);
+  }
   registerHoverProvider(context);
   registerDiagnostics(context, () => ensureRuntime(context));
 
@@ -307,9 +319,24 @@ async function activate(context) {
     ),
   );
 
-  await maybeOfferCliSetup(context);
+  const controller = new Controller(vscode, context, () => ensureRuntime(context));
+  const view = new ChatView(vscode, context, controller);
+  context.subscriptions.push(controller,
+    vscode.window.registerWebviewViewProvider("swahilipro.chat", view),
+    vscode.workspace.registerTextDocumentContentProvider("swahilipro-diff", { provideTextDocumentContent: uri => controller.tools?.previews.get(uri.toString()) || "" }),
+    vscode.commands.registerCommand("swahilipro.openChat", () => vscode.commands.executeCommand("swahilipro.chat.focus")),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => { exposeRuntimeToIntegratedTerminals(context); controller.update(); }),
+  );
+  for (const name of ["signIn", "signOut", "newSession", "attachSelection", "explainSelection", "reviewEdit"]) {
+    context.subscriptions.push(vscode.commands.registerCommand(`swahilipro.${name}`, async () => {
+      try { await controller[name](); } catch (error) { controller.error(error); }
+      await vscode.commands.executeCommand("swahilipro.chat.focus");
+    }));
+  }
+  if (vscode.workspace.isTrusted) await maybeOfferCliSetup(context);
 }
 
 function deactivate() {}
 
 module.exports = { activate, deactivate };
+

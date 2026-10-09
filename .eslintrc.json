@@ -1,0 +1,45 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2022
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    ".vscode-test/"
+  ],
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "caughtErrors": "none"
+      }
+    ],
+    "no-control-regex": "off",
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "media/*.js"
+      ],
+      "env": {
+        "browser": true
+      },
+      "globals": {
+        "acquireVsCodeApi": "readonly"
+      }
+    }
+  ]
+}

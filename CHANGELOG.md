@@ -24,3 +24,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.1.0]
 
 - Initial release
+
+
+## Unreleased
+
+- Add account/browser sign-in, credits/model discovery and streamed chat sidebar.
+- Keep refresh grants in SecretStorage and refuse uncertain refresh replays.
+- Connect the shared protocol-v1 engine with explicit context and reviewed editor edits.
+- Gate runtime access on workspace trust; bound diagnostics and preserve runtime files during packaging.
