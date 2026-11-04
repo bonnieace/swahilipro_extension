@@ -5,45 +5,25 @@ on:
   push:
     branches:
       - master
+      - language-only
+      - release/swahilipro-language-v1.0.0
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Install dependencies
-        run: npm ci
-
-      - name: Validate extension source
-        run: npm run check
-
-      - name: Lint and test host components
-        run: |
-          npm run lint
-          npm test
-
-      - name: Verify editor buffers and undo
-        run: xvfb-run -a npm run test:editor
-
-      - name: Validate VS Code package contents
-        run: npx vsce ls
-
-      - name: Smoke-test runtime injection
-        shell: bash
-        run: |
-          cat > /tmp/swa <<'EOF'
-          #!/bin/sh
-          echo '{"v":1,"type":"hello","protocol":1}'
-          EOF
-          chmod +x /tmp/swa
-          node scripts/package-with-runtime.js /tmp/swa linux-x64
-          test -f dist/swahilipro-linux-x64.vsix
-          unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swa'
-          unzip -l dist/swahilipro-linux-x64.vsix | grep 'extension/runtime/swahilipro'
-
+        run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Package VSIX
+        run: npm run package
+      - name: Verify VSIX contains no executables or process/network code
+        run: npm run verify

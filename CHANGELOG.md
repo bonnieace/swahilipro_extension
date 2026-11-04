@@ -1,34 +1,12 @@
 # Change Log
 
-All notable changes to the "swahilipro" extension will be documented in this file.
+## [1.0.0]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+First release of **Swahili Programming Language - SwahiliPro**, a language-support-only extension.
 
-## [0.1.2]
+- SwahiliPro v2 syntax highlighting for `.swa` files.
+- Comment, bracket, auto-closing and indentation rules.
+- Hover documentation with examples for SwahiliPro keywords and built-ins.
+- **SwahiliPro: New File** command.
 
-- Keeps the VS Code run terminal open after a `.swa` program finishes so output remains visible.
-- Runs files inside the user's normal integrated terminal instead of using the short-lived `swa` process as the terminal shell.
-- Makes both `swa` and `swahilipro` available when the bundled CLI is exposed on PATH.
-- Adds hover documentation and examples for SwahiliPro v2 keywords and built-ins.
-- Adds live syntax diagnostics so invalid `.swa` lines are underlined in the editor with the compiler error message.
-
-## [0.1.1]
-
-- Added the new SwahiliPro brand icon for the VS Code Marketplace listing.
-- Preserved the existing `.swa` language representation icon.
-- Removed the contributed SwahiliPro color theme so installing the extension keeps the user's existing VS Code theme.
-- Made the bundled `swa` runtime available automatically in new VS Code integrated terminals.
-- Added a one-time opt-in **Enable CLI** flow and Command Palette action to add a stable per-user SwahiliPro CLI directory to PATH for external terminals.
-- Refreshes the installed per-user CLI from the bundled runtime when the extension is updated.
-
-## [0.1.0]
-
-- Initial release
-
-
-## Unreleased
-
-- Add account/browser sign-in, credits/model discovery and streamed chat sidebar.
-- Keep refresh grants in SecretStorage and refuse uncertain refresh replays.
-- Connect the shared protocol-v1 engine with explicit context and reviewed editor edits.
-- Gate runtime access on workspace trust; bound diagnostics and preserve runtime files during packaging.
+This extension contains no native binaries, starts no processes, makes no network requests and does not modify PATH or shell configuration. The `swa` runtime is installed separately.

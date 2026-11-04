@@ -1,0 +1,94 @@
+name: release-extension
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      marketplace:
+        description: "Publish to the VS Code Marketplace"
+        type: boolean
+        default: true
+      openvsx:
+        description: "Publish to Open VSX"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-extension
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - name: Read version and check tag
+        id: meta
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version v$version"
+            exit 1
+          fi
+      - run: npm run lint
+      - run: npm run package
+      - run: npm run verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: dist/swahilipro-language.vsix
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix
+          path: dist
+      - name: Publish to VS Code Marketplace
+        if: ${{ github.event_name == 'push' || inputs.marketplace }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --packagePath dist/swahilipro-language.vsix
+      - name: Publish to Open VSX
+        if: ${{ github.event_name == 'push' || inputs.openvsx }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        shell: bash
+        run: |
+          if [[ -z "$OVSX_PAT" ]]; then
+            echo "::warning::OVSX_PAT secret not set; skipping Open VSX."
+            exit 0
+          fi
+          npx ovsx publish dist/swahilipro-language.vsix -p "$OVSX_PAT"
+      - name: Attach VSIX to GitHub release
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/swahilipro-language.vsix \
+            --title "Swahili Programming Language - SwahiliPro ${{ needs.build.outputs.version }}" \
+            --notes-file CHANGELOG.md
