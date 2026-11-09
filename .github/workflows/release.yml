@@ -58,6 +58,7 @@ jobs:
     environment: release
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -68,11 +69,19 @@ jobs:
         with:
           name: vsix
           path: dist
+      # Same Entra app the masota publisher already trusts (swahilipro-compiler).
+      # Its federated credential for this repo must use subject
+      # repo:bonnieace/swahilipro_extension:environment:release
+      - name: Sign in to Microsoft Entra with GitHub OIDC
+        if: ${{ github.event_name == 'push' || inputs.marketplace }}
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
       - name: Publish to VS Code Marketplace
         if: ${{ github.event_name == 'push' || inputs.marketplace }}
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish --packagePath dist/swahilipro-language.vsix
+        run: npx vsce publish --packagePath dist/swahilipro-language.vsix --azure-credential --skip-duplicate
       - name: Publish to Open VSX
         if: ${{ github.event_name == 'push' || inputs.openvsx }}
         env:
