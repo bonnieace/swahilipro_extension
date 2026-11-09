@@ -19,4 +19,11 @@ if grep -rEn "child_process|powershell|execFile|execSync|spawn\(|require\([\"'](
   echo "::error::Process-spawning or network code found in VSIX" >&2
   exit 1
 fi
+# The Marketplace rejects icons that are not real images, whatever the extension says.
+while IFS= read -r png; do
+  if [[ "$(head -c 8 "$png" | od -An -tx1 | tr -d ' \n')" != "89504e470d0a1a0a" ]]; then
+    echo "::error::${png#"$work"/} is not a valid PNG file" >&2
+    exit 1
+  fi
+done < <(find "$work" -type f -iname '*.png')
 echo "VSIX is clean."
